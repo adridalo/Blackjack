@@ -16,11 +16,17 @@ export class Card {
         }
         // whether or not to display the card (face card value image, or back of card)
         this.display = display
+        this.CARD_IMAGE_URL = image
 
         // if display is false, show the back of the card
         if(!display) this.cardImage = "/images/back.png"
         // otherwise show the image as passed in
-        else this.cardImage = image
+        else this.cardImage = this.CARD_IMAGE_URL
+    }
+
+    revealCard() {
+        // this.display = true;
+        this.cardImage = this.CARD_IMAGE_URL
     }
     
 }
