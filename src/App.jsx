@@ -3,6 +3,8 @@ import { Card, PlayerTypes } from "./Card"
 
 function App() {
 
+  // boolean to show whether or not to show the same
+  const [displayGame, setDisplayGame] = useState(false)
   // players list of cards
   const [playerCards, setPlayerCards] = useState([])
   // dealers list of cards
@@ -11,6 +13,7 @@ function App() {
   const [playerSum, setPlayerSum] = useState(0)
   // dealer sum of values from current cards
   const [dealerSum, setDealerSum] = useState(0)
+  // boolean to show dealers card (after player has finished their turn/busts)
   const [displayDealerSum, setDisplayDealerSum] = useState(false)
 
   useEffect(() => {
@@ -145,28 +148,26 @@ function App() {
   return (
     <>
       <h1>Blackjack</h1>
-      {/* dealers cards */}
-      {dealerCards.length !== 0 &&
-        <div id="player-cards">
-          {dealerCards.map((card, i) => {
-            return (
-              <img 
-                className="card" 
-                key={i} src={card.cardImage} 
-                alt={`${card['value']} of ${card['suit']}`} 
-              />
-            );
-          })}
-        </div>
-      }
-
-        {displayDealerSum &&
-          <p>Dealer has {dealerSum}</p>
-        }
-
-      {/* players cards */}
-      {playerCards.length !== 0 &&
+      {displayGame ?
         <>
+          {/* dealers cards */}
+          <div id="player-cards">
+            {dealerCards.map((card, i) => {
+              return (
+                <img 
+                  className="card" 
+                  key={i} src={card.cardImage} 
+                  alt={`${card['value']} of ${card['suit']}`} 
+                />
+              );
+            })}
+          </div>
+
+          {displayDealerSum &&
+            <p>Dealer has {dealerSum}</p>
+          }
+
+          {/* players cards */}
           <div id="dealer-cards">
             {playerCards.map((card, i) => {
               return (
@@ -180,12 +181,19 @@ function App() {
           </div>
 
           <p>Player has {playerSum}</p>
+
+          <button onClick={hit}>Hit</button>
+          <button onClick={stand}>Stand</button>
+
         </>
+      :
+        <button
+            onClick={() => setDisplayGame(true)}
+        >
+          Play Blackjack!
+        </button>
       }
-
-
-      <button onClick={hit}>Hit</button>
-      <button onClick={stand}>Stand</button>
+      
     </>
   )
 }
