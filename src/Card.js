@@ -18,7 +18,7 @@ export class Card {
         this.display = display
 
         // if display is false, show the back of the card
-        if(!display) this.cardImage = "./public/images/back.png"
+        if(!display) this.cardImage = "/images/back.png"
         // otherwise show the image as passed in
         else this.cardImage = image
     }
