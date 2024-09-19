@@ -76,7 +76,9 @@ function App() {
   }, [gameStarted])
 
   useEffect(() => {
-    if(gameStarted) determineSum(playerCards, PlayerTypes.Player)
+    if(gameStarted) {
+      determineSum(playerCards, PlayerTypes.Player)
+    }
   }, [playerCards])
 
   // logic to handle hitting
@@ -105,7 +107,14 @@ function App() {
 
   // logic to handle standing
   const stand = async () => {
+    disableGame()
+    const revealedCards = dealerCards.map(card => {
+      card.revealCard()
+      return card
+    })
 
+    setDealerCards(revealedCards)
+    setDisplayDealerSum(true)
   }
 
   // function to disable game buttons
@@ -117,7 +126,7 @@ function App() {
   // function to show lose status + disable game
   const lose = () => {
     setGameStatus("You lose!")
-    disableGame()
+    stand()
   }
 
   // logic to determine sum of all cards in a deck
@@ -209,7 +218,8 @@ function App() {
               return (
                 <img 
                   className="card" 
-                  key={i} src={card.cardImage} 
+                  key={i} 
+                  src={card.cardImage} 
                   alt={`${card['value']} of ${card['suit']}`} 
                 />
               );
@@ -226,7 +236,8 @@ function App() {
               return (
                 <img 
                   className="card" 
-                  key={i} src={card.cardImage} 
+                  key={i} 
+                  src={card.cardImage} 
                   alt={`${card['value']} of ${card['suit']}`} 
                 />
               );
@@ -242,7 +253,7 @@ function App() {
             Hit
           </button>
           <button 
-            onClick={stand}
+            onClick={() => stand()}
             id="stand"
           >
             Stand
@@ -267,3 +278,4 @@ function App() {
 }
 
 export default App
+
