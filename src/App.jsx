@@ -15,65 +15,109 @@ function App() {
   const [dealerSum, setDealerSum] = useState(0)
   // boolean to show dealers card (after player has finished their turn/busts)
   const [displayDealerSum, setDisplayDealerSum] = useState(false)
+  // state for deck id (used for creating + drawing from a deck)
+  const [deckId, setDeckId] = useState(null)
+  // text for displaying game status (win, lose, blackjack)
+  const [gameStatus, setGameStatus] = useState("")
+  const [gameStarted, setGameStarted] = useState(false)
 
   useEffect(() => {
     (async () => {
-      // request a deck
-      const deckResponse = await fetch("https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count=6")
-      // deck information
-      const deckInfo = await deckResponse.json()
+      if(gameStarted) {
+          // request a deck
+        const deckResponse = await fetch("https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count=6")
+        // deck information
+        const deckInfo = await deckResponse.json()
+        const deckId = deckInfo['deck_id']
+        setDeckId(deckId)
 
-      const newPlayerCards = []
-      const newDealerCards = []
+        const newPlayerCards = []
+        const newDealerCards = []
 
-      for(let i = 0; i < 2; i++) {
-        // response to draw from a deck for player
-        const playerCardResponse = await fetch(`https://deckofcardsapi.com/api/deck/${deckInfo['deck_id']}/draw/?count=1`)
-        // card information
-        const playerCard = await playerCardResponse.json()
-        // create a Card object from the response
-        const playerCardObject = new Card(
-          playerCard['cards'][0]['suit'],
-          playerCard['cards'][0]['value'], 
-          playerCard['cards'][0]['image'], 
-          true
-        )
-        // add Card object to list of players cards
-        newPlayerCards.push(playerCardObject)
+        for(let i = 0; i < 2; i++) {
+          // response to draw from a deck for player
+          const playerCardResponse = await fetch(`https://deckofcardsapi.com/api/deck/${deckId}/draw/?count=1`)
+          // card information
+          const playerCard = await playerCardResponse.json()
+          // create a Card object from the response
+          const playerCardObject = new Card(
+            playerCard['cards'][0]['suit'],
+            playerCard['cards'][0]['value'], 
+            playerCard['cards'][0]['image'], 
+            true
+          )
+          // add Card object to list of players cards
+          newPlayerCards.push(playerCardObject)
 
-        // response to draw from a deck for dealer
-        const dealerCardResponse = await fetch(`https://deckofcardsapi.com/api/deck/${deckInfo['deck_id']}/draw/?count=1`)
-        // card information
-        const dealerCard = await dealerCardResponse.json()
-        // create a Card oject from the response
-        const dealerCardObject = new Card(
-          dealerCard['cards'][0]['suit'],
-          dealerCard['cards'][0]['value'], 
-          dealerCard['cards'][0]['image'], 
-          // false be default, don't show the dealers cards
-        )
-        // add Card object to list of dealers cards
-        newDealerCards.push(dealerCardObject)
+          // response to draw from a deck for dealer
+          const dealerCardResponse = await fetch(`https://deckofcardsapi.com/api/deck/${deckId}/draw/?count=1`)
+          // card information
+          const dealerCard = await dealerCardResponse.json()
+          // create a Card oject from the response
+          const dealerCardObject = new Card(
+            dealerCard['cards'][0]['suit'],
+            dealerCard['cards'][0]['value'], 
+            dealerCard['cards'][0]['image'], 
+            // false be default, don't show the dealers cards
+          )
+          // add Card object to list of dealers cards
+          newDealerCards.push(dealerCardObject)
+        }
+
+        setPlayerCards(newPlayerCards)
+        setDealerCards(newDealerCards)
+
+        // calculate sum of all cards of players cards
+        determineSum(newPlayerCards, PlayerTypes.Player)
+        // calculate sum of all cards of dealers cards
+        determineSum(newDealerCards, PlayerTypes.Dealer)
       }
-
-      setPlayerCards(newPlayerCards)
-      setDealerCards(newDealerCards)
-
-      // calculate sum of all cards of players cards
-      determineSum(newPlayerCards, PlayerTypes.Player)
-      // calculate sum of all cards of dealers cards
-      determineSum(newDealerCards, PlayerTypes.Dealer)
     })()
-  }, [])
+  }, [gameStarted])
+
+  useEffect(() => {
+    if(gameStarted) determineSum(playerCards, PlayerTypes.Player)
+  }, [playerCards])
 
   // logic to handle hitting
-  const hit = async () => {
+  const hit = async (playerType) => {
+    const dealCardResponse = await fetch(`https://deckofcardsapi.com/api/deck/${deckId}/draw/?count=1`)
+    const dealtCard = await dealCardResponse.json()
 
+    let cardsCopy = []
+
+    if(playerType === PlayerTypes.Player) {
+      cardsCopy = [...playerCards]
+    } else if(playerType === PlayerTypes.Dealer) {
+      cardsCopy = [...dealerCards]
+    }
+
+    const dealtCardObject = new Card(
+      dealtCard['cards'][0]['suit'],
+      dealtCard['cards'][0]['value'],
+      dealtCard['cards'][0]['image'],
+      true
+    )
+
+    cardsCopy.push(dealtCardObject)
+    setPlayerCards(cardsCopy)
   }
 
   // logic to handle standing
   const stand = async () => {
 
+  }
+
+  // function to disable game buttons
+  const disableGame = () => {
+    document.getElementById("hit").disabled = true
+    document.getElementById("stand").disabled = true
+  }
+
+  // function to show lose status + disable game
+  const lose = () => {
+    setGameStatus("You lose!")
+    disableGame()
   }
 
   // logic to determine sum of all cards in a deck
@@ -114,6 +158,8 @@ function App() {
         if(sum === 21) {
           // player has blackjack!
           setPlayerSum(21)
+          setGameStatus("BLACKJACK! You win!")
+          disableGame()
           return
         } 
         // show sum as 2 possible values (sum + ace as 11 or sum + ace as 1)
@@ -122,8 +168,16 @@ function App() {
       }
       // set sum as regular
       setPlayerSum(sum)
+      if(sum === 21) {
+        // player has blackjack!
+        setGameStatus("BLACKJACK! You win!")
+        disableGame()
+        return
+      } 
+      if(sum > 21) {
+        lose()
+      }
       return
-
       // if player considered is the dealer
     } else if(playerType === PlayerTypes.Dealer) {
         // if there is an ace in current cards
@@ -141,7 +195,6 @@ function App() {
         // set sum as regular
         setDealerSum(sum)
         return
-
     }
   }
 
@@ -182,13 +235,28 @@ function App() {
 
           <p>Player has {playerSum}</p>
 
-          <button onClick={hit}>Hit</button>
-          <button onClick={stand}>Stand</button>
-
+          <button
+            onClick={() => hit(PlayerTypes.Player)}
+            id="hit"
+          >
+            Hit
+          </button>
+          <button 
+            onClick={stand}
+            id="stand"
+          >
+            Stand
+          </button>
+          {gameStatus !== "" && 
+            <p>{gameStatus}</p>
+          }
         </>
       :
         <button
-            onClick={() => setDisplayGame(true)}
+            onClick={() => {
+              setGameStarted(true)
+              setDisplayGame(true)
+            }}
         >
           Play Blackjack!
         </button>
